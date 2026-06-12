@@ -1,0 +1,1 @@
+Floatype（浮译） local mode sends text only to the local Ollama service configured in settings. It does not provide or call a Floatype（浮译） cloud server.

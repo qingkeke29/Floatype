@@ -1,0 +1,8 @@
+.DS_Store
+.build/
+.superpowers/
+DerivedData/
+*.xcuserdata/
+*.xcuserstate
+*.swp
+*.log
