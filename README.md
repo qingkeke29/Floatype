@@ -47,7 +47,7 @@ Download the latest macOS app from the [Releases](../../releases) page.
 
 After downloading:
 
-1. Unzip `Floatype-macOS.zip`.
+1. Unzip `Floatype-macOS-v0.1.0.zip`.
 2. Move `Floatype.app` to your Applications folder.
 3. Open Floatype from Finder.
 4. Grant Accessibility permission if you want Floatype to insert text back into other apps automatically.

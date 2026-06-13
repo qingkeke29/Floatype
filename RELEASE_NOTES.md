@@ -17,7 +17,7 @@ Floatype is designed for Chinese-first writing workflows where you want fast Eng
 
 ## Install
 
-1. Download `Floatype-macOS.zip`.
+1. Download `Floatype-macOS-v0.1.0.zip`.
 2. Unzip it.
 3. Move `Floatype.app` to Applications.
 4. Open it from Finder.
