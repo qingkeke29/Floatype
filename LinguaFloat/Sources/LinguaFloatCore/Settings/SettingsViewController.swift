@@ -4,8 +4,15 @@ import AppKit
 final class SettingsViewController: NSViewController {
     private let settings: AppSettings
     private let permissionService: AccessibilityPermissionService
-    private let modelField = NSTextField()
+    private let sourcePopup = NSPopUpButton()
+    private let localModelCombo = NSComboBox()
+    private let refreshModelsButton = NSButton(title: "刷新模型", target: nil, action: nil)
     private let baseURLField = NSTextField()
+    private let customAPIURLField = NSTextField()
+    private let customAPIKeyField = NSSecureTextField()
+    private let customAPIModelField = NSTextField()
+    private let testConnectionButton = NSButton(title: "测试连接", target: nil, action: nil)
+    private let modelMessageLabel = NSTextField(labelWithString: "")
     private let stylePopup = NSPopUpButton()
     private let delayField = NSTextField()
     private let permissionLabel = NSTextField(labelWithString: "")
@@ -13,6 +20,7 @@ final class SettingsViewController: NSViewController {
     private let hotKeyMessageLabel = NSTextField(labelWithString: "")
     private let recordHotKeyButton = NSButton(title: "录制快捷键", target: nil, action: nil)
     private let resetHotKeyButton = NSButton(title: "恢复默认", target: nil, action: nil)
+    private var localModels: [LocalModelInfo] = []
     private var hotKeyRecorder = HotKeyRecorder()
     private var hotKeyRecordingStep = 0
     private var hotKeyEventMonitor: Any?
@@ -68,8 +76,36 @@ final class SettingsViewController: NSViewController {
         privacy.textColor = .secondaryLabelColor
         stack.addArrangedSubview(privacy)
 
-        stack.addArrangedSubview(makeRow("默认模型", modelField))
+        sourcePopup.addItems(withTitles: ModelSource.allCases.map(\.displayName))
+        sourcePopup.target = self
+        sourcePopup.action = #selector(modelSourceChanged)
+        stack.addArrangedSubview(makeRow("模型来源", sourcePopup))
+
         stack.addArrangedSubview(makeRow("Ollama 地址", baseURLField))
+
+        let localModelRow = NSStackView()
+        localModelRow.orientation = .horizontal
+        localModelRow.spacing = 8
+        localModelCombo.usesDataSource = false
+        localModelCombo.completes = true
+        localModelCombo.widthAnchor.constraint(greaterThanOrEqualToConstant: 170).isActive = true
+        refreshModelsButton.target = self
+        refreshModelsButton.action = #selector(refreshLocalModels)
+        localModelRow.addArrangedSubview(localModelCombo)
+        localModelRow.addArrangedSubview(refreshModelsButton)
+        stack.addArrangedSubview(makeRow("本地模型", localModelRow))
+
+        stack.addArrangedSubview(makeRow("API URL", customAPIURLField))
+        stack.addArrangedSubview(makeRow("API Key", customAPIKeyField))
+        stack.addArrangedSubview(makeRow("API 模型", customAPIModelField))
+
+        testConnectionButton.target = self
+        testConnectionButton.action = #selector(testModelConnection)
+        stack.addArrangedSubview(makeRow("连接测试", testConnectionButton))
+
+        modelMessageLabel.textColor = .secondaryLabelColor
+        modelMessageLabel.font = .systemFont(ofSize: 12)
+        stack.addArrangedSubview(modelMessageLabel)
 
         stylePopup.addItems(withTitles: TranslationStyle.allCases.map(\.displayName))
         stack.addArrangedSubview(makeRow("默认翻译风格", stylePopup))
@@ -152,13 +188,41 @@ final class SettingsViewController: NSViewController {
     }
 
     private func loadValues() {
-        modelField.stringValue = settings.defaultModel
+        sourcePopup.selectItem(at: ModelSource.allCases.firstIndex(of: settings.modelSource) ?? 0)
+        localModelCombo.stringValue = settings.localOllamaModel
         baseURLField.stringValue = settings.ollamaBaseURL.absoluteString
+        customAPIURLField.stringValue = settings.customAPIURLString
+        customAPIKeyField.stringValue = settings.customAPIKey
+        customAPIModelField.stringValue = settings.customAPIModel
         delayField.stringValue = String(format: "%.1f", settings.autoTranslateDelay)
         let index = TranslationStyle.allCases.firstIndex(of: settings.defaultStyle) ?? 1
         stylePopup.selectItem(at: index)
         hotKeyValueLabel.stringValue = settings.globalHotKeyShortcut.displayName
         hotKeyMessageLabel.stringValue = "点击录制后依次按两个键；使用时同时按下。"
+        updateModelSourceVisibility()
+    }
+
+    private var selectedModelSource: ModelSource {
+        let index = sourcePopup.indexOfSelectedItem
+        return ModelSource.allCases.indices.contains(index) ? ModelSource.allCases[index] : .localOllama
+    }
+
+    private func updateModelSourceVisibility() {
+        let isLocal = selectedModelSource == .localOllama
+        baseURLField.isEnabled = isLocal
+        localModelCombo.isEnabled = isLocal
+        refreshModelsButton.isEnabled = isLocal
+        customAPIURLField.isEnabled = !isLocal
+        customAPIKeyField.isEnabled = !isLocal
+        customAPIModelField.isEnabled = !isLocal
+        modelMessageLabel.textColor = .secondaryLabelColor
+        modelMessageLabel.stringValue = isLocal
+            ? "本地模式会读取 Ollama 已下载模型，也可以手动输入模型名。"
+            : "自定义 API 使用 OpenAI-compatible /v1/chat/completions 格式。"
+    }
+
+    @objc private func modelSourceChanged() {
+        updateModelSourceVisibility()
     }
 
     private func updatePermissionLabel() {
@@ -190,10 +254,34 @@ final class SettingsViewController: NSViewController {
     }
 
     @objc private func save() {
-        settings.defaultModel = modelField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let url = URL(string: baseURLField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) {
+        let source = selectedModelSource
+        let ollamaURLString = baseURLField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let localModel = localModelCombo.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let customAPIURL = customAPIURLField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let customAPIModel = customAPIModelField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let validation = ModelConfigurationValidator.validate(
+            source: source,
+            ollamaURL: ollamaURLString,
+            localModel: localModel,
+            customAPIURL: customAPIURL,
+            customAPIModel: customAPIModel
+        )
+        if case .failure(let message) = validation {
+            modelMessageLabel.textColor = .systemRed
+            modelMessageLabel.stringValue = message
+            return
+        }
+
+        settings.modelSource = source
+        settings.localOllamaModel = localModel
+        settings.customAPIURLString = customAPIURL
+        settings.customAPIKey = customAPIKeyField.stringValue
+        settings.customAPIModel = customAPIModel
+        if let url = URL(string: ollamaURLString) {
             settings.ollamaBaseURL = url
         }
+
         let styleIndex = stylePopup.indexOfSelectedItem
         if TranslationStyle.allCases.indices.contains(styleIndex) {
             settings.defaultStyle = TranslationStyle.allCases[styleIndex]
@@ -201,6 +289,103 @@ final class SettingsViewController: NSViewController {
         settings.autoTranslateDelay = Double(delayField.stringValue) ?? 0.7
         onHotKeyChanged?(settings.globalHotKeyShortcut)
         view.window?.close()
+    }
+
+    @objc private func refreshLocalModels() {
+        guard let url = URL(string: baseURLField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            modelMessageLabel.textColor = .systemRed
+            modelMessageLabel.stringValue = "Ollama 地址无效。"
+            return
+        }
+
+        let currentModel = localModelCombo.stringValue
+        modelMessageLabel.textColor = .secondaryLabelColor
+        modelMessageLabel.stringValue = "正在读取本地模型..."
+        refreshModelsButton.isEnabled = false
+
+        Task {
+            let provider = OllamaProvider(baseURL: url, currentModel: currentModel)
+            do {
+                let models = try await provider.listModels()
+                await MainActor.run {
+                    localModels = models
+                    localModelCombo.removeAllItems()
+                    localModelCombo.addItems(withObjectValues: models.map(\.name))
+                    modelMessageLabel.textColor = .secondaryLabelColor
+                    modelMessageLabel.stringValue = models.isEmpty ? "没有读取到已下载模型。" : "已读取 \(models.count) 个模型。"
+                    refreshModelsButton.isEnabled = true
+                }
+            } catch {
+                await MainActor.run {
+                    modelMessageLabel.textColor = .systemRed
+                    modelMessageLabel.stringValue = "读取 Ollama 模型失败。"
+                    refreshModelsButton.isEnabled = true
+                }
+            }
+        }
+    }
+
+    @objc private func testModelConnection() {
+        let source = selectedModelSource
+        let validation = ModelConfigurationValidator.validate(
+            source: source,
+            ollamaURL: baseURLField.stringValue,
+            localModel: localModelCombo.stringValue,
+            customAPIURL: customAPIURLField.stringValue,
+            customAPIModel: customAPIModelField.stringValue
+        )
+        if case .failure(let message) = validation {
+            modelMessageLabel.textColor = .systemRed
+            modelMessageLabel.stringValue = message
+            return
+        }
+
+        let ollamaURLString = baseURLField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let localModel = localModelCombo.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let customAPIURL = customAPIURLField.stringValue
+        let customAPIKey = customAPIKeyField.stringValue
+        let customAPIModel = customAPIModelField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        modelMessageLabel.textColor = .secondaryLabelColor
+        modelMessageLabel.stringValue = "正在测试连接..."
+        testConnectionButton.isEnabled = false
+
+        Task {
+            let status: ProviderStatus
+            switch source {
+            case .localOllama:
+                let provider = OllamaProvider(
+                    baseURL: URL(string: ollamaURLString)!,
+                    currentModel: localModel
+                )
+                status = await provider.checkAvailability()
+            case .customAPI:
+                do {
+                    let endpoint = try OpenAICompatibleEndpoint.normalized(from: customAPIURL)
+                    let provider = OpenAICompatibleProvider(
+                        endpoint: endpoint,
+                        apiKey: customAPIKey,
+                        currentModel: customAPIModel
+                    )
+                    _ = try await provider.translate(text: "测试", style: .natural) { _ in }
+                    status = .available
+                } catch {
+                    status = .failed(error.localizedDescription)
+                }
+            }
+
+            await MainActor.run {
+                switch status {
+                case .available:
+                    modelMessageLabel.textColor = .secondaryLabelColor
+                    modelMessageLabel.stringValue = "连接测试通过。"
+                default:
+                    modelMessageLabel.textColor = .systemRed
+                    modelMessageLabel.stringValue = status.detailText
+                }
+                testConnectionButton.isEnabled = true
+            }
+        }
     }
 
     private func installHotKeyEventMonitor() {
