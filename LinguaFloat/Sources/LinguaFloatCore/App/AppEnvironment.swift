@@ -15,7 +15,7 @@ public final class AppEnvironment {
 
     public init(settings: AppSettings = .shared) {
         self.settings = settings
-        self.modelProvider = OllamaProvider(baseURL: settings.ollamaBaseURL, currentModel: settings.defaultModel)
+        self.modelProvider = SettingsBackedModelProvider(settings: settings)
         self.accessibilityPermissionService = AccessibilityPermissionService()
         self.focusCaptureService = FocusCaptureService()
         self.keyboardEventService = KeyboardEventService()

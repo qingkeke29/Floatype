@@ -30,7 +30,7 @@ final class FloatingPanelViewModel {
         self.state = FloatingPanelState(
             selectedOutput: settings.defaultOutputSelection,
             style: settings.defaultStyle,
-            modelName: provider.currentModel
+            modelName: Self.providerDisplayName(for: provider)
         )
     }
 
@@ -45,7 +45,7 @@ final class FloatingPanelViewModel {
             style: settings.defaultStyle,
             providerStatus: state.providerStatus,
             statusText: "等待输入",
-            modelName: provider.currentModel,
+            modelName: providerDisplayName,
             isGenerating: false,
             errorMessage: nil
         )
@@ -241,6 +241,17 @@ final class FloatingPanelViewModel {
 
     private func emit() {
         onStateChange?(state)
+    }
+
+    private var providerDisplayName: String {
+        Self.providerDisplayName(for: provider)
+    }
+
+    private static func providerDisplayName(for provider: LocalModelProvider) -> String {
+        if let routedProvider = provider as? SettingsBackedModelProvider {
+            return routedProvider.displayName
+        }
+        return "\(provider.providerName) · \(provider.currentModel)"
     }
 
 }
