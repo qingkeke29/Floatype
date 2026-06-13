@@ -20,9 +20,52 @@ public final class AppSettings {
         set { defaults.set(newValue.absoluteString, forKey: Keys.ollamaBaseURL) }
     }
 
+    public var modelSource: ModelSource {
+        get { ModelSource(rawValue: defaults.string(forKey: Keys.modelSource) ?? "") ?? .localOllama }
+        set { defaults.set(newValue.rawValue, forKey: Keys.modelSource) }
+    }
+
+    public var localOllamaModel: String {
+        get {
+            let value = defaults.string(forKey: Keys.defaultModel) ?? ModelDefaults.ollamaModel
+            return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? ModelDefaults.ollamaModel : value
+        }
+        set { defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.defaultModel) }
+    }
+
     public var defaultModel: String {
-        get { defaults.string(forKey: Keys.defaultModel) ?? ModelDefaults.ollamaModel }
-        set { defaults.set(newValue, forKey: Keys.defaultModel) }
+        get { localOllamaModel }
+        set { localOllamaModel = newValue }
+    }
+
+    public var customAPIURLString: String {
+        get { defaults.string(forKey: Keys.customAPIURLString) ?? "" }
+        set { defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.customAPIURLString) }
+    }
+
+    public var customAPIKey: String {
+        get { defaults.string(forKey: Keys.customAPIKey) ?? "" }
+        set { defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.customAPIKey) }
+    }
+
+    public var customAPIModel: String {
+        get { defaults.string(forKey: Keys.customAPIModel) ?? "" }
+        set { defaults.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forKey: Keys.customAPIModel) }
+    }
+
+    public var activeModelName: String {
+        switch modelSource {
+        case .localOllama:
+            return localOllamaModel
+        case .customAPI:
+            return customAPIModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? "未设置模型"
+                : customAPIModel
+        }
+    }
+
+    public var activeModelDisplayName: String {
+        "\(modelSource.modelLabelPrefix) · \(activeModelName)"
     }
 
     public var defaultStyle: TranslationStyle {
@@ -87,7 +130,11 @@ public final class AppSettings {
     private func registerDefaults() {
         defaults.register(defaults: [
             Keys.ollamaBaseURL: "http://127.0.0.1:11434",
+            Keys.modelSource: ModelSource.localOllama.rawValue,
             Keys.defaultModel: ModelDefaults.ollamaModel,
+            Keys.customAPIURLString: "",
+            Keys.customAPIKey: "",
+            Keys.customAPIModel: "",
             Keys.defaultStyle: TranslationStyle.natural.rawValue,
             Keys.defaultOutputSelection: OutputSelection.english.rawValue,
             Keys.autoTranslateEnabled: true,
@@ -106,7 +153,11 @@ public final class AppSettings {
 
     private enum Keys {
         static let ollamaBaseURL = "ollamaBaseURL"
+        static let modelSource = "modelSource"
         static let defaultModel = "defaultModel"
+        static let customAPIURLString = "customAPIURLString"
+        static let customAPIKey = "customAPIKey"
+        static let customAPIModel = "customAPIModel"
         static let defaultStyle = "defaultStyle"
         static let defaultOutputSelection = "defaultOutputSelection"
         static let autoTranslateEnabled = "autoTranslateEnabled"

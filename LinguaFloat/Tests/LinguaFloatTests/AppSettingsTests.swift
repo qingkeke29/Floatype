@@ -73,4 +73,47 @@ final class AppSettingsTests: XCTestCase {
 
         XCTAssertEqual(settings.defaultOutputSelection, .english)
     }
+
+    func testDefaultModelSourceIsLocalOllama() {
+        let suiteName = "LinguaFloatModelSourceDefaultTest-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let settings = AppSettings(defaults: defaults)
+
+        XCTAssertEqual(settings.modelSource, .localOllama)
+        XCTAssertEqual(settings.localOllamaModel, "qwen3.5:9b")
+        XCTAssertEqual(settings.activeModelDisplayName, "Ollama · qwen3.5:9b")
+    }
+
+    func testPersistsCustomAPIConfiguration() {
+        let suiteName = "LinguaFloatCustomAPISettingsTest-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let settings = AppSettings(defaults: defaults)
+
+        settings.modelSource = .customAPI
+        settings.customAPIURLString = "https://api.deepseek.com"
+        settings.customAPIKey = "secret-key"
+        settings.customAPIModel = "deepseek-chat"
+
+        let reloaded = AppSettings(defaults: defaults)
+        XCTAssertEqual(reloaded.modelSource, .customAPI)
+        XCTAssertEqual(reloaded.customAPIURLString, "https://api.deepseek.com")
+        XCTAssertEqual(reloaded.customAPIKey, "secret-key")
+        XCTAssertEqual(reloaded.customAPIModel, "deepseek-chat")
+        XCTAssertEqual(reloaded.activeModelDisplayName, "API · deepseek-chat")
+    }
+
+    func testDefaultModelRemainsAliasForLocalOllamaModel() {
+        let suiteName = "LinguaFloatDefaultModelAliasTest-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let settings = AppSettings(defaults: defaults)
+
+        settings.defaultModel = "qwen2.5:7b"
+
+        XCTAssertEqual(settings.localOllamaModel, "qwen2.5:7b")
+        XCTAssertEqual(settings.defaultModel, "qwen2.5:7b")
+    }
 }
