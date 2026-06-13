@@ -17,7 +17,8 @@ public enum OpenAICompatibleEndpoint {
         guard var components = URLComponents(string: trimmed),
               let scheme = components.scheme,
               ["http", "https"].contains(scheme.lowercased()),
-              components.host != nil else {
+              let host = components.host,
+              !host.isEmpty else {
             throw OpenAICompatibleEndpointError.invalidURL
         }
 

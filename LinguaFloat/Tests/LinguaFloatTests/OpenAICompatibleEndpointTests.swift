@@ -24,4 +24,8 @@ final class OpenAICompatibleEndpointTests: XCTestCase {
     func testRejectsInvalidURL() {
         XCTAssertThrowsError(try OpenAICompatibleEndpoint.normalized(from: "not a url"))
     }
+
+    func testRejectsURLWithEmptyHost() {
+        XCTAssertThrowsError(try OpenAICompatibleEndpoint.normalized(from: "https://"))
+    }
 }
