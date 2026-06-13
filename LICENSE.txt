@@ -1,0 +1,15 @@
+Floatype Proprietary License
+
+Copyright (c) 2026 Haixu Wang. All rights reserved.
+
+This repository provides binary downloads and usage documentation for Floatype.
+The Floatype source code is not open source and is not licensed for copying,
+redistribution, modification, sublicensing, resale, or reverse engineering.
+
+You may download and use the published Floatype application build for personal
+evaluation and normal end-user use.
+
+No warranty is provided. The software is provided "as is", without warranty of
+any kind, express or implied.
+
+For permission requests, contact the project owner.
