@@ -4,6 +4,14 @@ Floatype（浮译） is an open-source native macOS floating bilingual input pan
 
 The app is local-first: it can translate with a local Ollama model, and it can also use a user-configured OpenAI-compatible chat completions API. Floatype does not provide a cloud service, account system, analytics, ads, crash upload SDKs, sync, or translation history.
 
+## Download
+
+Download the latest ready-to-use macOS app from GitHub Releases:
+
+[Download Floatype-macOS-v0.2.0.zip](https://github.com/qingkeke29/Floatype/releases/latest/download/Floatype-macOS-v0.2.0.zip)
+
+Unzip it, move `Floatype.app` to Applications, then open it from Finder. This build is self-signed, so macOS may ask you to confirm before opening.
+
 ## Source
 
 The Swift package lives in [`LinguaFloat`](LinguaFloat/).

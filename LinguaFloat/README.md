@@ -2,6 +2,14 @@
 
 Floatype（浮译） is a native macOS floating bilingual input panel designed to work alongside normal Chinese input methods such as 豆包输入法. It does not modify the input method, read candidate windows, use OCR, or send text to cloud AI services.
 
+## Download
+
+Download the latest ready-to-use macOS app from GitHub Releases:
+
+[Download Floatype-macOS-v0.2.0.zip](https://github.com/qingkeke29/Floatype/releases/latest/download/Floatype-macOS-v0.2.0.zip)
+
+Unzip it, move `Floatype.app` to Applications, then open it from Finder. This build is self-signed, so macOS may ask you to confirm before opening.
+
 ## What v1 Does
 
 - Opens a floating AppKit `NSPanel` with the configured global shortcut, defaulting to Command + Z, or from the menu bar item.
