@@ -70,3 +70,13 @@ public struct OpenAIErrorResponse: Decodable {
         public let code: String?
     }
 }
+
+public extension OpenAIChatCompletionResponse {
+    var firstMessageContent: String? {
+        choices.compactMap { $0.message?.content }.first
+    }
+
+    var firstDeltaContent: String? {
+        choices.compactMap { $0.delta?.content }.first
+    }
+}
