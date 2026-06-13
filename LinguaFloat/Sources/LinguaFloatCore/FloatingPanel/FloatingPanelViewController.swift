@@ -95,7 +95,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
     private let titleLabel = NSTextField(labelWithString: "浮译")
     private let statusPill = NSView()
     private let statusDot = NSView()
-    private let statusLabel = NSTextField(labelWithString: "等待本地模型")
+    private let statusLabel = NSTextField(labelWithString: ProviderStatus.checking.displayText)
     private let modelLabel = NSTextField(labelWithString: ModelDefaults.ollamaModel)
     private let chineseTextView = ChineseTextView(frame: .zero)
     private let englishTextView = EnglishTextView(frame: .zero)

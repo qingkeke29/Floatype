@@ -12,15 +12,15 @@ public enum ProviderStatus: Equatable {
     public var displayText: String {
         switch self {
         case .checking:
-            return "等待本地模型"
+            return "检查模型"
         case .available:
-            return "已离线运行"
+            return "模型可用"
         case .serviceUnavailable:
             return "Ollama 未运行"
         case .modelMissing:
             return "模型未安装"
         case .loading:
-            return "等待本地模型"
+            return "等待模型"
         case .generating:
             return "正在翻译"
         case .failed:
@@ -31,9 +31,9 @@ public enum ProviderStatus: Equatable {
     public var detailText: String {
         switch self {
         case .checking:
-            return "正在检查本机 Ollama 服务..."
+            return "正在检查模型服务..."
         case .available:
-            return "本地模型可用。"
+            return "当前模型可用。"
         case .serviceUnavailable:
             return "Ollama 尚未运行，本地英文翻译暂不可用。"
         case .modelMissing(let model):
@@ -41,7 +41,7 @@ public enum ProviderStatus: Equatable {
         case .loading:
             return "首次加载模型可能需要更长时间。"
         case .generating:
-            return "正在从本机模型流式生成英文。"
+            return "正在生成英文。"
         case .failed(let message):
             return message
         }

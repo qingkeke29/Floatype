@@ -7,7 +7,7 @@ Floatype（浮译） is a native macOS floating bilingual input panel designed t
 - Opens a floating AppKit `NSPanel` with the configured global shortcut, defaulting to Command + Z, or from the menu bar item.
 - Lets the user type Chinese into a real `NSTextView`, preserving marked text and candidate composition behavior.
 - Debounces confirmed Chinese text for about 700 ms before translating.
-- Calls local Ollama at `http://127.0.0.1:11434/api/chat` with the default model `qwen3.5:9b`.
+- Uses the model source configured in Settings: local Ollama or a custom OpenAI-compatible API.
 - Streams English into an editable `NSTextView`.
 - Inserts Chinese or English output into the app that was focused before the panel opened.
 - Falls back to clipboard paste while preserving pasteboard item data when direct Accessibility insertion is unavailable.
@@ -18,9 +18,18 @@ Floatype（浮译） is a native macOS floating bilingual input panel designed t
 - Apple Silicon recommended
 - Xcode command line tools / Xcode
 - Swift 6 toolchain compatible with SwiftPM
-- Ollama for local translation
+- Ollama if you use the local model source
 
-The app still runs if Ollama or `qwen3.5:9b` is missing. It will show the missing service/model state and let you copy:
+## Model Sources
+
+Floatype supports two model sources configured from Settings only:
+
+- Local Ollama: use a local or LAN Ollama URL and choose an installed model from the refreshable model list, or type a model name manually.
+- Custom API: use an OpenAI-compatible chat completions API by entering API URL, API Key, and model name.
+
+The floating panel shows the active source/model but does not change model settings. Use the gear button or menu bar Settings window to change source, URL, key, or model.
+
+For local Ollama, the app still runs if Ollama or `qwen3.5:9b` is missing. It will show the missing service/model state and let you copy:
 
 ```bash
 ollama pull qwen3.5:9b
