@@ -107,12 +107,11 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
             viewModel: viewModel,
             settingsWindowController: settingsWindowController
         ) { [weak self] command in
-            self?.handle(command)
+            self?.handle(command) ?? false
         }
         panel.contentViewController = controller
         panel.commandHandler = { [weak self] command in
-            self?.handle(command)
-            return true
+            self?.handle(command) ?? false
         }
         panel.hasMarkedTextProvider = { [weak controller] in
             controller?.hasMarkedText() ?? false
@@ -145,28 +144,56 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(origin)
     }
 
-    private func handle(_ command: FloatingPanelCommand) {
+    private func handle(_ command: FloatingPanelCommand) -> Bool {
         switch command {
         case .useChinese:
+            guard settings.command1UseChineseEnabled else {
+                return false
+            }
             viewModel.setSelectedOutput(.chinese)
             commitSelected()
+            return true
         case .useEnglish:
+            guard settings.command2UseEnglishEnabled else {
+                return false
+            }
             viewModel.setSelectedOutput(.english)
             commitSelected()
+            return true
+        case .useSettingsDefault:
+            guard settings.command3UseSettingsDefaultEnabled else {
+                return false
+            }
+            viewModel.useSettingsDefaultOutput()
+            commitSelected()
+            return true
+        case .toggleMultiLanguageOutput:
+            guard settings.commandShiftMToggleMultiLanguageEnabled else {
+                return false
+            }
+            viewModel.toggleMultiLanguageOutput()
+            return true
         case .selectPreviousOutput:
             viewModel.selectPreviousOutput()
+            return true
         case .selectNextOutput:
             viewModel.selectNextOutput()
+            return true
         case .commitSelected:
             commitSelected()
+            return true
         case .cancel:
             cancel()
+            return true
         case .translateNow:
             viewModel.translateIfReady(force: true, hasMarkedText: viewController?.hasMarkedText() ?? false)
+            return true
         case .retry:
             viewModel.translateIfReady(force: true, hasMarkedText: viewController?.hasMarkedText() ?? false)
+            return true
         case .stop:
             viewModel.stopTranslation()
+            return true
         }
     }
 

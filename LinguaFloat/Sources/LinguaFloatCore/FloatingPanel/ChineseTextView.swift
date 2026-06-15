@@ -38,7 +38,9 @@ class PlaceholderTextView: NSTextView {
     }
 
     override func keyDown(with event: NSEvent) {
-        let commandPressed = event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command)
+        let normalizedFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let commandPressed = normalizedFlags.contains(.command)
+        let shiftPressed = normalizedFlags.contains(.shift)
         let key = event.charactersIgnoringModifiers?.lowercased()
 
         if commandPressed {
@@ -47,6 +49,10 @@ class PlaceholderTextView: NSTextView {
                 if commandHandler?(.useChinese) == true { return }
             case "2":
                 if commandHandler?(.useEnglish) == true { return }
+            case "3":
+                if commandHandler?(.useSettingsDefault) == true { return }
+            case "m" where shiftPressed:
+                if commandHandler?(.toggleMultiLanguageOutput) == true { return }
             case "\r":
                 if commandHandler?(.commitSelected) == true { return }
             case "r":

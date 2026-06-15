@@ -1,8 +1,10 @@
 import Foundation
 
-enum FloatingPanelCommand {
+enum FloatingPanelCommand: Equatable {
     case useChinese
     case useEnglish
+    case useSettingsDefault
+    case toggleMultiLanguageOutput
     case selectPreviousOutput
     case selectNextOutput
     case commitSelected

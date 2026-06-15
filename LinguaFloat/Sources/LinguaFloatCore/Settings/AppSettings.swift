@@ -68,9 +68,83 @@ public final class AppSettings {
         "\(modelSource.modelLabelPrefix) · \(activeModelName)"
     }
 
+    public var sourceLanguage: TranslationLanguage {
+        get { TranslationLanguage(rawValue: defaults.string(forKey: Keys.sourceLanguage) ?? "") ?? .auto }
+        set { defaults.set(newValue.rawValue, forKey: Keys.sourceLanguage) }
+    }
+
+    public var targetLanguage: TranslationLanguage {
+        get {
+            let language = TranslationLanguage(rawValue: defaults.string(forKey: Keys.targetLanguage) ?? "") ?? .english
+            return language == .auto ? .english : language
+        }
+        set {
+            defaults.set((newValue == .auto ? TranslationLanguage.english : newValue).rawValue, forKey: Keys.targetLanguage)
+        }
+    }
+
+    public var translationMode: TranslationMode {
+        get {
+            if let rawValue = defaults.string(forKey: Keys.translationMode),
+               let mode = TranslationMode(rawValue: rawValue) {
+                return mode
+            }
+            let legacy = TranslationStyle(rawValue: defaults.string(forKey: Keys.defaultStyle) ?? "") ?? .natural
+            return TranslationMode(legacyStyle: legacy)
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: Keys.translationMode)
+            defaults.set(newValue.legacyStyle.rawValue, forKey: Keys.defaultStyle)
+        }
+    }
+
+    public var multiLanguageOutput: Bool {
+        get { defaults.bool(forKey: Keys.multiLanguageOutput) }
+        set { defaults.set(newValue, forKey: Keys.multiLanguageOutput) }
+    }
+
+    public var translationPreferences: TranslationPreferences {
+        TranslationPreferences(
+            sourceLanguage: sourceLanguage,
+            targetLanguage: targetLanguage,
+            mode: translationMode,
+            multiLanguageOutput: multiLanguageOutput
+        )
+    }
+
+    public var translationSettingsSummary: String {
+        [
+            "\(sourceLanguage.displayName) → \((targetLanguage == .auto ? TranslationLanguage.english : targetLanguage).displayName)",
+            translationMode.displayName,
+            multiLanguageOutput ? "Multi" : nil
+        ]
+        .compactMap { $0 }
+        .joined(separator: " · ")
+    }
+
+    public var command1UseChineseEnabled: Bool {
+        get { defaults.bool(forKey: Keys.command1UseChineseEnabled) }
+        set { defaults.set(newValue, forKey: Keys.command1UseChineseEnabled) }
+    }
+
+    public var command2UseEnglishEnabled: Bool {
+        get { defaults.bool(forKey: Keys.command2UseEnglishEnabled) }
+        set { defaults.set(newValue, forKey: Keys.command2UseEnglishEnabled) }
+    }
+
+    public var command3UseSettingsDefaultEnabled: Bool {
+        get { defaults.bool(forKey: Keys.command3UseSettingsDefaultEnabled) }
+        set { defaults.set(newValue, forKey: Keys.command3UseSettingsDefaultEnabled) }
+    }
+
+    public var commandShiftMToggleMultiLanguageEnabled: Bool {
+        get { defaults.bool(forKey: Keys.commandShiftMToggleMultiLanguageEnabled) }
+        set { defaults.set(newValue, forKey: Keys.commandShiftMToggleMultiLanguageEnabled) }
+    }
+
     public var defaultStyle: TranslationStyle {
-        get { TranslationStyle(rawValue: defaults.string(forKey: Keys.defaultStyle) ?? "") ?? .natural }
-        set { defaults.set(newValue.rawValue, forKey: Keys.defaultStyle) }
+        get { translationMode.legacyStyle }
+        set { translationMode = TranslationMode(legacyStyle: newValue) }
     }
 
     public var defaultOutputSelection: OutputSelection {
@@ -135,13 +209,21 @@ public final class AppSettings {
             Keys.customAPIURLString: "",
             Keys.customAPIKey: "",
             Keys.customAPIModel: "",
+            Keys.sourceLanguage: TranslationLanguage.auto.rawValue,
+            Keys.targetLanguage: TranslationLanguage.english.rawValue,
+            Keys.translationMode: TranslationMode.natural.rawValue,
+            Keys.multiLanguageOutput: false,
             Keys.defaultStyle: TranslationStyle.natural.rawValue,
             Keys.defaultOutputSelection: OutputSelection.english.rawValue,
             Keys.autoTranslateEnabled: true,
             Keys.autoTranslateDelay: 0.7,
             Keys.preserveNewlines: true,
             Keys.openPanelOnLaunch: false,
-            Keys.globalHotKeyShortcut: GlobalHotKeyShortcut.defaultShortcut.storageValue
+            Keys.globalHotKeyShortcut: GlobalHotKeyShortcut.defaultShortcut.storageValue,
+            Keys.command1UseChineseEnabled: true,
+            Keys.command2UseEnglishEnabled: true,
+            Keys.command3UseSettingsDefaultEnabled: true,
+            Keys.commandShiftMToggleMultiLanguageEnabled: true
         ])
     }
 
@@ -158,6 +240,10 @@ public final class AppSettings {
         static let customAPIURLString = "customAPIURLString"
         static let customAPIKey = "customAPIKey"
         static let customAPIModel = "customAPIModel"
+        static let sourceLanguage = "sourceLanguage"
+        static let targetLanguage = "targetLanguage"
+        static let translationMode = "translationMode"
+        static let multiLanguageOutput = "multiLanguageOutput"
         static let defaultStyle = "defaultStyle"
         static let defaultOutputSelection = "defaultOutputSelection"
         static let autoTranslateEnabled = "autoTranslateEnabled"
@@ -166,5 +252,9 @@ public final class AppSettings {
         static let openPanelOnLaunch = "openPanelOnLaunch"
         static let globalHotKeyShortcut = "globalHotKeyShortcut"
         static let lastPanelFrame = "lastPanelFrame"
+        static let command1UseChineseEnabled = "command1UseChineseEnabled"
+        static let command2UseEnglishEnabled = "command2UseEnglishEnabled"
+        static let command3UseSettingsDefaultEnabled = "command3UseSettingsDefaultEnabled"
+        static let commandShiftMToggleMultiLanguageEnabled = "commandShiftMToggleMultiLanguageEnabled"
     }
 }

@@ -13,7 +13,10 @@ final class SettingsViewController: NSViewController {
     private let customAPIModelField = NSTextField()
     private let testConnectionButton = NSButton(title: "测试连接", target: nil, action: nil)
     private let modelMessageLabel = NSTextField(labelWithString: "")
-    private let stylePopup = NSPopUpButton()
+    private let sourceLanguagePopup = NSPopUpButton()
+    private let targetLanguagePopup = NSPopUpButton()
+    private let translationModePopup = NSPopUpButton()
+    private let multiLanguageOutputCheckbox = NSButton(checkboxWithTitle: "启用多语言输出", target: nil, action: nil)
     private let delayField = NSTextField()
     private let permissionLabel = NSTextField(labelWithString: "")
     private let hotKeyValueLabel = NSTextField(labelWithString: "")
@@ -24,6 +27,7 @@ final class SettingsViewController: NSViewController {
     private var hotKeyRecorder = HotKeyRecorder()
     private var hotKeyRecordingStep = 0
     private var hotKeyEventMonitor: Any?
+    private var currentTargetLanguageOptions: [TranslationLanguage] = []
     var onHotKeyChanged: ((GlobalHotKeyShortcut) -> Void)?
 
     init(settings: AppSettings, permissionService: AccessibilityPermissionService) {
@@ -107,8 +111,14 @@ final class SettingsViewController: NSViewController {
         modelMessageLabel.font = .systemFont(ofSize: 12)
         stack.addArrangedSubview(modelMessageLabel)
 
-        stylePopup.addItems(withTitles: TranslationStyle.allCases.map(\.displayName))
-        stack.addArrangedSubview(makeRow("默认翻译风格", stylePopup))
+        sourceLanguagePopup.addItems(withTitles: TranslationLanguage.allCases.map(\.settingsDisplayName))
+        sourceLanguagePopup.target = self
+        sourceLanguagePopup.action = #selector(sourceLanguageChanged)
+        translationModePopup.addItems(withTitles: TranslationMode.allCases.map(\.settingsDisplayName))
+        stack.addArrangedSubview(makeRow("源语言", sourceLanguagePopup))
+        stack.addArrangedSubview(makeRow("目标语言", targetLanguagePopup))
+        stack.addArrangedSubview(makeRow("翻译模式", translationModePopup))
+        stack.addArrangedSubview(makeRow("多语言输出", multiLanguageOutputCheckbox))
 
         stack.addArrangedSubview(makeRow("自动翻译延迟", delayField))
 
@@ -194,9 +204,11 @@ final class SettingsViewController: NSViewController {
         customAPIURLField.stringValue = settings.customAPIURLString
         customAPIKeyField.stringValue = settings.customAPIKey
         customAPIModelField.stringValue = settings.customAPIModel
+        sourceLanguagePopup.selectItem(at: TranslationLanguage.allCases.firstIndex(of: settings.sourceLanguage) ?? 0)
+        reloadTargetLanguageOptions(selecting: settings.targetLanguage)
+        translationModePopup.selectItem(at: TranslationMode.allCases.firstIndex(of: settings.translationMode) ?? 1)
+        multiLanguageOutputCheckbox.state = settings.multiLanguageOutput ? .on : .off
         delayField.stringValue = String(format: "%.1f", settings.autoTranslateDelay)
-        let index = TranslationStyle.allCases.firstIndex(of: settings.defaultStyle) ?? 1
-        stylePopup.selectItem(at: index)
         hotKeyValueLabel.stringValue = settings.globalHotKeyShortcut.displayName
         hotKeyMessageLabel.stringValue = "点击录制后依次按两个键；使用时同时按下。"
         updateModelSourceVisibility()
@@ -223,6 +235,36 @@ final class SettingsViewController: NSViewController {
 
     @objc private func modelSourceChanged() {
         updateModelSourceVisibility()
+    }
+
+    @objc private func sourceLanguageChanged() {
+        reloadTargetLanguageOptions(selecting: selectedTargetLanguage)
+    }
+
+    private var selectedSourceLanguage: TranslationLanguage {
+        let index = sourceLanguagePopup.indexOfSelectedItem
+        return TranslationLanguage.allCases.indices.contains(index) ? TranslationLanguage.allCases[index] : .auto
+    }
+
+    private var selectedTargetLanguage: TranslationLanguage {
+        let index = targetLanguagePopup.indexOfSelectedItem
+        return currentTargetLanguageOptions.indices.contains(index) ? currentTargetLanguageOptions[index] : .english
+    }
+
+    private func reloadTargetLanguageOptions(selecting selectedLanguage: TranslationLanguage) {
+        currentTargetLanguageOptions = TranslationLanguage.targetOptions(forSource: selectedSourceLanguage)
+        targetLanguagePopup.removeAllItems()
+        targetLanguagePopup.addItems(
+            withTitles: currentTargetLanguageOptions.map {
+                $0.targetDisplayName(forSource: selectedSourceLanguage)
+            }
+        )
+
+        if let index = currentTargetLanguageOptions.firstIndex(of: selectedLanguage) {
+            targetLanguagePopup.selectItem(at: index)
+        } else {
+            targetLanguagePopup.selectItem(at: 0)
+        }
     }
 
     private func updatePermissionLabel() {
@@ -282,10 +324,16 @@ final class SettingsViewController: NSViewController {
             settings.ollamaBaseURL = url
         }
 
-        let styleIndex = stylePopup.indexOfSelectedItem
-        if TranslationStyle.allCases.indices.contains(styleIndex) {
-            settings.defaultStyle = TranslationStyle.allCases[styleIndex]
+        let sourceLanguageIndex = sourceLanguagePopup.indexOfSelectedItem
+        if TranslationLanguage.allCases.indices.contains(sourceLanguageIndex) {
+            settings.sourceLanguage = TranslationLanguage.allCases[sourceLanguageIndex]
         }
+        settings.targetLanguage = selectedTargetLanguage
+        let translationModeIndex = translationModePopup.indexOfSelectedItem
+        if TranslationMode.allCases.indices.contains(translationModeIndex) {
+            settings.translationMode = TranslationMode.allCases[translationModeIndex]
+        }
+        settings.multiLanguageOutput = multiLanguageOutputCheckbox.state == .on
         settings.autoTranslateDelay = Double(delayField.stringValue) ?? 0.7
         onHotKeyChanged?(settings.globalHotKeyShortcut)
         view.window?.close()

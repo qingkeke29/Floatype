@@ -90,7 +90,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
 
     private let viewModel: FloatingPanelViewModel
     private let settingsWindowController: SettingsWindowController
-    private var commandHandler: ((FloatingPanelCommand) -> Void)?
+    private var commandHandler: ((FloatingPanelCommand) -> Bool)?
 
     private let titleLabel = NSTextField(labelWithString: "浮译")
     private let statusPill = NSView()
@@ -102,6 +102,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
     private let settingsButton = NSButton(title: "", target: nil, action: nil)
     private let statusActionButton = NSButton(title: "重新检测", target: nil, action: nil)
     private let stopButton = NSButton(title: "停止", target: nil, action: nil)
+    private let bottomHintLabel = NSTextField(labelWithString: "↑↓ 选择 · ↩ 填入 · Esc 取消 · Tab 重新翻译")
     private var chineseBox: NSBox?
     private var englishBox: NSBox?
     private var chineseSectionLabel: NSTextField?
@@ -110,7 +111,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
     init(
         viewModel: FloatingPanelViewModel,
         settingsWindowController: SettingsWindowController,
-        commandHandler: @escaping (FloatingPanelCommand) -> Void
+        commandHandler: @escaping (FloatingPanelCommand) -> Bool
     ) {
         self.viewModel = viewModel
         self.settingsWindowController = settingsWindowController
@@ -179,6 +180,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
             titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
 
             modelLabel.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 7),
+            modelLabel.trailingAnchor.constraint(lessThanOrEqualTo: settingsButton.leadingAnchor, constant: -8),
             modelLabel.firstBaselineAnchor.constraint(equalTo: titleLabel.firstBaselineAnchor),
 
             settingsButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: FloatingPanelLayoutMetrics.settingsButtonFrame.minX),
@@ -215,8 +217,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
         chineseTextView.delegate = self
         englishTextView.delegate = self
         chineseTextView.commandHandler = { [weak self] command in
-            self?.commandHandler?(command)
-            return true
+            self?.commandHandler?(command) ?? false
         }
         englishTextView.commandHandler = chineseTextView.commandHandler
 
@@ -379,34 +380,37 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
         let bar = NSView()
         bar.translatesAutoresizingMaskIntoConstraints = false
 
-        let hint = NSTextField(labelWithString: "↑↓ 选择 · ↩ 填入 · Esc 取消 · Tab 重新翻译")
-        hint.font = .systemFont(ofSize: 10)
-        hint.textColor = MockupStyle.secondaryText
-        hint.lineBreakMode = .byTruncatingTail
-        hint.alignment = .center
-        hint.translatesAutoresizingMaskIntoConstraints = false
+        bottomHintLabel.font = .systemFont(ofSize: 10)
+        bottomHintLabel.textColor = MockupStyle.secondaryText
+        bottomHintLabel.lineBreakMode = .byTruncatingTail
+        bottomHintLabel.alignment = .center
+        bottomHintLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        bar.addSubview(hint)
+        bar.addSubview(bottomHintLabel)
         NSLayoutConstraint.activate([
-            hint.centerXAnchor.constraint(equalTo: bar.centerXAnchor),
-            hint.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
-            hint.leadingAnchor.constraint(greaterThanOrEqualTo: bar.leadingAnchor, constant: 14),
-            hint.trailingAnchor.constraint(lessThanOrEqualTo: bar.trailingAnchor, constant: -14)
+            bottomHintLabel.centerXAnchor.constraint(equalTo: bar.centerXAnchor),
+            bottomHintLabel.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            bottomHintLabel.leadingAnchor.constraint(greaterThanOrEqualTo: bar.leadingAnchor, constant: 14),
+            bottomHintLabel.trailingAnchor.constraint(lessThanOrEqualTo: bar.trailingAnchor, constant: -14)
         ])
         return bar
     }
 
     private func render(_ state: FloatingPanelState) {
+        titleLabel.stringValue = state.panelTitle
         statusLabel.stringValue = state.statusText
         applyStatusBadgeStyle(for: state.providerStatus)
-        modelLabel.stringValue = state.modelName
+        modelLabel.stringValue = "\(state.modelName) · \(state.settingsSummary)"
         let canShowStatusAction = state.providerStatus == .serviceUnavailable || state.providerStatus.isModelMissing || {
             if case .failed = state.providerStatus { return true }
             return false
         }()
         statusActionButton.isHidden = !canShowStatusAction
         stopButton.isHidden = !state.isGenerating
-        statusActionButton.title = state.providerStatus.isModelMissing ? "复制安装命令" : "重新检测"
+        statusActionButton.title = state.providerStatus.isModelMissing ? state.installCommandTitle : state.retryTitle
+        stopButton.title = state.stopTitle
+        settingsButton.toolTip = state.settingsTooltip
+        bottomHintLabel.stringValue = state.bottomHint
 
         if englishTextView.string != state.englishText {
             englishTextView.string = state.englishText
@@ -414,6 +418,10 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
         if chineseTextView.string != state.chineseText {
             chineseTextView.string = state.chineseText
         }
+        chineseSectionLabel?.stringValue = state.sourceTitle
+        englishSectionLabel?.stringValue = state.resultTitle
+        chineseTextView.placeholder = state.sourcePlaceholder
+        englishTextView.placeholder = state.resultPlaceholder
 
         let panelSelection = state.selectedOutput.panelSelection
         applySelectionStyle(to: chineseBox, label: chineseSectionLabel, selected: panelSelection == .chinese)
@@ -484,7 +492,7 @@ final class FloatingPanelViewController: NSViewController, NSTextViewDelegate {
     }
 
     @objc private func stopGenerating() {
-        commandHandler?(.stop)
+        _ = commandHandler?(.stop)
     }
 
     @objc private func openSettings() {

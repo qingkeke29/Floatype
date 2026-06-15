@@ -71,6 +71,23 @@ public final class OllamaProvider: LocalModelProvider {
         style: TranslationStyle,
         onToken: @escaping @Sendable (String) -> Void
     ) async throws -> String {
+        try await translate(prompt: style.prompt(for: text), onToken: onToken)
+    }
+
+    public func translate(
+        text: String,
+        preferences: TranslationPreferences,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String {
+        let prompt = PromptBuilder.prompt(for: text, preferences: preferences)
+        let translated = try await translate(prompt: prompt, onToken: onToken)
+        return OutputFormatter.format(translated, preferences: preferences)
+    }
+
+    private func translate(
+        prompt: String,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String {
         cancelCurrentRequest()
 
         let model = currentModel
@@ -82,7 +99,7 @@ public final class OllamaProvider: LocalModelProvider {
             OllamaChatRequest(
                 model: model,
                 messages: [
-                    OllamaChatMessage(role: "user", content: style.prompt(for: text))
+                    OllamaChatMessage(role: "user", content: prompt)
                 ],
                 stream: true,
                 options: OllamaOptions(temperature: 0.1, numPredict: 512)

@@ -1,15 +1,24 @@
 import Foundation
 
-public protocol LocalModelProvider: AnyObject {
-    var providerName: String { get }
-    var currentModel: String { get set }
-
-    func checkAvailability() async -> ProviderStatus
-    func listModels() async throws -> [LocalModelInfo]
+public protocol LocalModelProvider: TranslationProvider {
     func translate(
         text: String,
         style: TranslationStyle,
         onToken: @escaping @Sendable (String) -> Void
     ) async throws -> String
-    func cancelCurrentRequest()
+}
+
+public extension LocalModelProvider {
+    func translate(
+        text: String,
+        preferences: TranslationPreferences,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String {
+        let translated = try await translate(
+            text: text,
+            style: preferences.mode.legacyStyle,
+            onToken: onToken
+        )
+        return OutputFormatter.format(translated, preferences: preferences)
+    }
 }

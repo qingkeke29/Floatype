@@ -45,6 +45,14 @@ public final class SettingsBackedModelProvider: LocalModelProvider {
         try await activeProvider().translate(text: text, style: style, onToken: onToken)
     }
 
+    public func translate(
+        text: String,
+        preferences: TranslationPreferences,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String {
+        try await activeProvider().translate(text: text, preferences: preferences, onToken: onToken)
+    }
+
     public func cancelCurrentRequest() {
         cachedProvider?.cancelCurrentRequest()
     }
