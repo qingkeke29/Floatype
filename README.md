@@ -1,10 +1,30 @@
 # Floatype（浮译）
 
+<p align="center">
+  <img src="docs/assets/floatype-icon.png" alt="Floatype app icon" width="128">
+</p>
+
 Floatype（浮译） is an open-source native macOS floating AI input layer.
 
 It is not meant to be another standalone translation app. The goal is to let you keep typing in the app you already use, open a small floating panel when needed, and turn your input into the language, tone, and output format configured in Settings.
 
 Floatype is local-first. It can use a local Ollama model, or a user-configured OpenAI-compatible chat completions API. It does not provide a cloud service, account system, analytics, ads, crash upload SDKs, sync, or translation history.
+
+## Demo
+
+<p align="center">
+  <video src="docs/assets/floatype-demo.mp4" controls width="100%"></video>
+</p>
+
+<p align="center">
+  <a href="docs/assets/floatype-demo.mp4">
+    <img src="docs/assets/floatype-demo-poster.png" alt="Floatype demo video" width="720">
+  </a>
+</p>
+
+<p align="center">
+  <a href="docs/assets/floatype-demo.mp4">Watch the Floatype demo video</a>
+</p>
 
 ## Download
 
@@ -24,6 +44,10 @@ Unzip it, move `Floatype.app` to Applications, then open it from Finder. This bu
 - Supports multi-language output with English / Chinese / Japanese / Korean sections.
 - Adapts the floating panel labels, placeholders, hints, and status copy to the selected source language.
 - Inserts the chosen result back into the previously focused app through Accessibility, with clipboard fallback when direct insertion is unavailable.
+
+## Recommended Setup
+
+推荐搭配豆包输入法使用。豆包输入法负责日常中文输入、候选词和系统输入体验，Floatype 负责 AI 语言控制、目标语言输出、多语言结果和写回。
 
 ## Settings-Driven Language Control
 

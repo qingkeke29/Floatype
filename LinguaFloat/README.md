@@ -1,8 +1,28 @@
 # Floatype（浮译） / macOS Floating AI Input Layer
 
+<p align="center">
+  <img src="../docs/assets/floatype-icon.png" alt="Floatype app icon" width="128">
+</p>
+
 Floatype（浮译） is a native macOS AppKit app that adds a floating AI language layer on top of normal text input.
 
 It works with existing apps and existing input methods. It does not replace your input method, inspect candidate windows, use OCR, or install a keyboard extension. The panel is a normal macOS floating window with real `NSTextView` input and output areas.
+
+## Demo
+
+<p align="center">
+  <video src="../docs/assets/floatype-demo.mp4" controls width="100%"></video>
+</p>
+
+<p align="center">
+  <a href="../docs/assets/floatype-demo.mp4">
+    <img src="../docs/assets/floatype-demo-poster.png" alt="Floatype demo video" width="720">
+  </a>
+</p>
+
+<p align="center">
+  <a href="../docs/assets/floatype-demo.mp4">Watch the Floatype demo video</a>
+</p>
 
 ## Download
 
@@ -15,6 +35,8 @@ Unzip it, move `Floatype.app` to Applications, then open it from Finder. This bu
 ## Product Intent
 
 Floatype is moving toward a system-level AI input language control layer.
+
+推荐搭配豆包输入法使用：豆包输入法负责系统输入体验，Floatype 负责 AI 语言控制层。两者可以并行工作，不需要替换现有输入习惯。
 
 The current app focuses on a small, practical loop:
 
